@@ -145,11 +145,12 @@ if loadnew:
     PS_IRGA19_detrend=binaveragePS_EC(dfIRGA,ECstart[100:200])
 else:
     #non binned 
-    PS_PIC19_q=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframesPS_PIC19_q_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-    PS_PIC19_gas18O=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframesPS_PIC19_gas18O_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-    PS_PIC19_gasD=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframesPS_PIC19_gasD_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-    PS_IRGA19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframesPS_IRGA19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-    PSIRGA_binned=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframesPS_IRGA19.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    PS_PIC19_q=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframes/PS_PIC19_q_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    PS_PIC19_gas18O=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframes/PS_PIC19_gas18O_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    #PS_PIC19_gasD=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframes/PS_PIC19_gasD_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    PS_IRGA19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframes/PS_IRGA19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    PSIRGA_binned=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dataframes/PS_IRGA19.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    PS_PIC19_gasD,ECstart,cutfreq,slopes=binaveragePS_PIC19(dfPIC,colname='gasD',avper=30)
     PS_IRGA19_detrend=binaveragePS_EC(dfIRGA,ECstart[100:200]) #a reduced number of ogive computations,linealary detrended instead of constat detrend
 #%%  calculate mean
 PS_PIC19_q['qmean']=PS_PIC19_q.mean(axis=1)
@@ -325,7 +326,7 @@ print('the first hum slope for binned freqs is'+ str(slopes_b[0]))
 print(breaksIRGA_b)
 ynew_b=10**(my_pwlf_b.predict(xb))
 
-ax1.loglog(dfIRGA.index,ynew_b,'pink',label='piecewise plot_binned')
+ax1.loglog(PS_IRGA19.index,ynew_b,'pink',label='piecewise plot_binned')
 ax1.loglog(PS_IRGA19_detrend.index,ynew,'r',label='piecewise plot_binned')
 ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaksIRGA[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
@@ -343,10 +344,11 @@ singleps,ax1=plt.subplots()
 
 ax1.loglog(PS_IRGA19.index,PS_IRGA19[str(highfreqmean.idxmax())],color='red') 
 
-for col in PS_IRGA19.columns[:-1]:  #plot all different half hours in light grey
-    ax1.loglog(PS_IRGA19.index,PS_IRGA19[col],color='black',alpha=0.1)
-for col2 in PS_IRGA19.columns[:-1][highfreqmean>8*10**(-4)]:  #plot the half hours that are corrupt in light orange
+for col2 in PS_IRGA19.columns[:-1][highfreqmean>8*10**(-5)]:  #plot the half hours that are corrupt in light orange
     ax1.loglog(PS_IRGA19.index,PS_IRGA19[col2],color='orange',alpha=0.2)  
+for col in PS_IRGA19.columns[:-1][highfreqmean<8*10**(-5)]:  #plot the good PS 
+    ax1.loglog(PS_IRGA19.index,PS_IRGA19[col],color='black',alpha=0.1)
+
 #%% histogram of high freq means and median to filter our which PS are not usable
 # the criterion is, that the mean value in the high frequencies is too high i.e. those half hour PS influence the overall mean PS and leads to the wrong shape
 
@@ -366,43 +368,112 @@ plt.xlim(0,0.001)
 plt.title('median')
 #%% save the dataframes
 if loadnew:
+    import csv
     pathsave='/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'
-    exportdf(PS_PIC19_q,pathsave,'PS_PIC19_q_nb')    
-    exportdf(PS_PIC19_gas18O,pathsave,'PS_PIC19_gas18O_nb')  
-    exportdf(PS_PIC19_gasD,pathsave,'PS_PIC19_gasD_nb')  
-    exportdf(PS_IRGA19,pathsave,'PS_IRGA19_nb')
+    PS_PIC19_q.to_csv(pathsave+'PS_PIC19_q_nb'+'.txt', header=PS_PIC19_q.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC)
+    PS_PIC19_gas18O.to_csv(pathsave+'PS_PIC19_gas18O_nb'+'.txt', header=PS_PIC19_gas18O.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC)  
+    PS_PIC19_gasD.to_csv(pathsave+'PS_PIC19_gasD_nb'+'.txt', header=PS_PIC19_gasD.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC)  
+    PS_IRGA19.to_csv(pathsave+'PS_IRGA19_nb'+'.txt', header=PS_IRGA19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC)      
+
 #%% Non Usable half hours of Irga
-idx_false=PS_IRGA19.columns[:-1][highfreqmean>8*10**(-4)]
+idx_right=PS_IRGA19.columns[:-1][highfreqmean<8*10**(-5)]
+right30min= pd.to_datetime('2019.'+idx_right,format='%Y.%m.%d %H%M')
+
+computenew=0
+whatswrong,(axwrong,axright,axboth)=plt.subplots(3,1,sharey=True,figsize=(16,10))
+xaxis=np.arange(36001)
+
+    
+idx_false=PS_IRGA19.columns[:-1][highfreqmean>8*10**(-5)]
 false30min= pd.to_datetime('2019.'+idx_false,format='%Y.%m.%d %H%M')
 
-whatswrong=plt.figure()
-xaxis=np.arange(36001)
+parafalse=pd.DataFrame(index=false30min,columns=['Ts','wd','ws','varq'])
 
 for hh in false30min:
     dfhh=dfIRGA.q[hh:hh+dt.timedelta(minutes=30)]
-    plt.plot(xaxis,dfhh,label=str(hh))
+    if computenew:
+        parafalse.Ts[hh]=(dfIRGA.T_SONIC[hh:hh+dt.timedelta(minutes=30)]).mean()
+        parafalse.varq[hh]=dfhh.var()
+        parafalse.wd[hh]=np.round((np.arctan2(-dfIRGA.Uy[hh:hh+dt.timedelta(minutes=30)],dfIRGA.Ux[hh:hh+dt.timedelta(minutes=30)])*180/np.pi+245).mean(),1)
+        parafalse.ws[hh]=np.round((np.sqrt(dfIRGA.Ux[hh:hh+dt.timedelta(minutes=30)]**2+dfIRGA.Uy[hh:hh+dt.timedelta(minutes=30)]**2)).mean(),1)
+    axwrong.plot(xaxis,dfhh)
+    axwrong.set_title('all 170 time series of bad PS')
+    axboth.plot(xaxis,dfhh,color='r',alpha=0.4)
 
-whatswrong.legend()
+#whatswrong.legend()
 
-idx_right=PS_IRGA19.columns[:100][highfreqmean[:100]<8*10**(-4)]
-right30min= pd.to_datetime('2019.'+idx_right,format='%Y.%m.%d %H%M')
-
-thatsright=plt.figure()
-xaxis=np.arange(36001)
-
+pararight=pd.DataFrame(index=right30min,columns=['Ts','wd','ws','varq'])
+a=0
 for hhyes in right30min:
-    dfhhyes=dfIRGA.q[hhyes:hhyes+dt.timedelta(minutes=30)]
-    plt.plot(xaxis,dfhhyes,label=str(hhyes))
+    try:
+        dfhhyes=dfIRGA.q[hhyes:hhyes+dt.timedelta(minutes=30)]
+    except KeyError:    #in case some Piucarro times are not resplved by the Irgaosn example 20.06.2019 Irgason keine Daten
+        a=a+1
+        continue
+    if computenew:
+        pararight.Ts[hhyes]=(dfIRGA.T_SONIC[hhyes:hhyes+dt.timedelta(minutes=30)]).mean()
+        pararight.varq[hhyes]=dfhhyes.var()
+        pararight.wd[hhyes]=np.round((np.arctan2(-dfIRGA.Uy[hhyes:hhyes+dt.timedelta(minutes=30)],dfIRGA.Ux[hhyes:hhyes+dt.timedelta(minutes=30)])*180/np.pi+245).mean(),1)
+        pararight.ws[hhyes]=np.round((np.sqrt(dfIRGA.Ux[hhyes:hhyes+dt.timedelta(minutes=30)]**2+dfIRGA.Uy[hhyes:hhyes+dt.timedelta(minutes=30)]**2)).mean(),1)
 
-thatsright.legend()
+    axright.plot(xaxis,dfhhyes,label=str(hhyes))
+    axright.set_title('all 756 time series of good PS')
+    axboth.plot(xaxis,dfhhyes,color='k',alpha=0.2)
+#thatsright.legend()    
+
+
+axwrong.set_ylim(0,25)
+axright.set_ylim(0,25)
+axboth.set_ylim(0,25)
+axwrong.set_ylabel('Irga humidity in g/m3')
+axright.set_ylabel('Irga humidity in g/m3')
+axboth.set_ylabel('Irga humidity in g/m3')
+
+whatswrong.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_whatswrong'+'.png')
+    
 #%% look at both mean PS and hopefully see a nice -5/3 slope for the good PSem
-badPS=PS_IRGA19[PS_IRGA19.columns[:-1][highfreqmean>8*10**(-4)]]
-badPS['qmean']=badPS.mean(axis=1)
+badPS=PS_IRGA19[PS_IRGA19.columns[:-1][highfreqmean>8*10**(-5)]]
+badPSqmean=badPS.mean(axis=1)
 
-goodPS=PS_IRGA19[PS_IRGA19.columns[:-1][highfreqmean<8*10**(-4)]]
-goodPS['qmean']=goodPS.mean(axis=1)
+goodPS=PS_IRGA19[PS_IRGA19.columns[:-1][highfreqmean<8*10**(-5)]]
+goodPSqmean=goodPS.mean(axis=1)
 
 compPS=plt.figure()
-plt.plot(badPS.index,badPS.qmean,label='badPS')
-plt.plot(goodPS.index,goodPS.qmean,label='goodPS')
+plt.loglog(badPSqmean,label='badPS')
+plt.loglog(goodPSqmean,label='goodPS')
 compPS.legend()
+
+#%% fitting a line through the good PS
+
+goodPS,ax1=plt.subplots(figsize=(12,6))
+ax1.loglog(goodPSqmean,color='gray',label='good PS mean')
+
+# linear fit model for loglog plot
+x=np.log10(goodPSqmean.index)
+y=np.log10(goodPSqmean)
+
+m,c=np.polyfit(x,y,1)
+yfit=10**(m*x+c)
+#ax1.loglog(PS_PIC19_gas18O.index,yfit,':',label='lin plot')
+print(m)
+
+# piecewise linear fit with pwlf
+my_pwlf = pwlf.PiecewiseLinFit(x, y)
+breaks18 = my_pwlf.fit (2)
+slopes = my_pwlf.calc_slopes()
+print('the first slope for good PS is'+ str(slopes[0]))
+print(breaks18)
+
+ynew=10**(my_pwlf.predict(x))
+ax1.set_title('Irgason humidity signal')
+ax1.set_xlabel('frequencies in Hz')
+ax1.set_ylabel('PS')
+
+ax1.loglog(goodPSqmean.index,ynew,'r',label='piecewise plot')
+ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes[0],2) }', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaks18[1])) }s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+
+ax1.loglog(goodPSqmean.index,1e-5*goodPSqmean.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
+ax1.legend()
+#goodPS.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_IRGAgood'+'.pdf')
+
