@@ -60,7 +60,7 @@ def binaveragePS_PIC19(dfPIC,colname='q',binnum=400,avper=30):
         #at which time
         checkstarttime.append(PIC30min.index[0])
         #Power density spectrum
-        freqs,PSden=signal.periodogram(np.array(PIC30min[colname][:1797]),fs=df_fa,detrend='constant',scaling='density')        # because of small timeshifts there can be less or more seconds in one half hour
+        freqs,PSden=signal.periodogram(np.array(PIC30min[colname][:1797]),fs=df_fa,detrend='linear',scaling='density')        # because of small timeshifts there can be less or more seconds in one half hour
         #stats,binedges,binnumber_vec=scistats.binned_statistic(freqs[1:],PSden[1:],statistic='mean',bins=binnum)    #(x, values, statistic='mean', bins=10, range=None)  #0 frequency cut out altough mean is already subtracted because
         #dfPSbinned[start[idx].strftime(fmt)]=pd.Series(data=stats,index=dfPSbinned.index)   #
         dfPSbinned[start[idx].strftime(fmt)]=pd.Series(data=PSden[1:],index=freqs[1:])
@@ -94,6 +94,7 @@ def binaveragePS_EC(dfEC,starttimes,colname='q',binnum=400,avper=30):
         endEC=dfEC.index<=starttimes[idx]+dt.timedelta(minutes=avper)
         dummyEC=[all(tup) for tup in zip(startEC,endEC)]
         EC30min=dfEC[dummyEC]
+        EC30min=EC30min.dropna()   #because detrend can not have nan
 
         if len(EC30min)<20*60*avper:   #to drop time periods with less than the needed amount of data
             continue        
@@ -119,6 +120,9 @@ dfPICall=pd.read_csv('/Users/swa048/forServer/Vapour/2019/EGRIP19_PICinterp.txt'
 #import20Hz data for comparison=
 dfIRGA=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR6/EGRIP_CR6Fluxall.txt',index_col=0,parse_dates=True,na_values=['NAN'])
 dfIRGA.rename(inplace=True,columns={'H2O_density':'q'})
+#import the 
+dfLICOR=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR5000/EGRIP_CR5Fluxall.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+dfLICOR.rename(inplace=True,columns={'H2O_mmolpm3':'q'})
 # get rid of calibration data (Valve code 32)
 dfPIC=dfPICall[dfPICall.Valve==4]
 
@@ -142,6 +146,8 @@ if loadnew:
     
     #EC with same times
     PS_IRGA19=binaveragePS_EC(dfIRGA,ECstart)
+    PS_IRGA19_w=binaveragePS_EC(dfIRGA,colname='Uz',starttimes=ECstart)
+    PS_LICOR19=binaveragePS_EC(dfLICOR,starttimes=ECstart)
     PS_IRGA19_detrend=binaveragePS_EC(dfIRGA,ECstart[100:200])
 else:
     #non binned 
@@ -378,16 +384,16 @@ if loadnew:
 #%% Non Usable half hours of Irga
 idx_right=PS_IRGA19.columns[:-1][highfreqmean<8*10**(-5)]
 right30min= pd.to_datetime('2019.'+idx_right,format='%Y.%m.%d %H%M')
+pararight=pd.DataFrame(index=right30min,columns=['Ts','wd','ws','varq'])
+
+idx_false=PS_IRGA19.columns[:-1][highfreqmean>8*10**(-5)]
+false30min= pd.to_datetime('2019.'+idx_false,format='%Y.%m.%d %H%M')
+parafalse=pd.DataFrame(index=false30min,columns=['Ts','wd','ws','varq'])
 
 computenew=0
 whatswrong,(axwrong,axright,axboth)=plt.subplots(3,1,sharey=True,figsize=(16,10))
 xaxis=np.arange(36001)
 
-    
-idx_false=PS_IRGA19.columns[:-1][highfreqmean>8*10**(-5)]
-false30min= pd.to_datetime('2019.'+idx_false,format='%Y.%m.%d %H%M')
-
-parafalse=pd.DataFrame(index=false30min,columns=['Ts','wd','ws','varq'])
 
 for hh in false30min:
     dfhh=dfIRGA.q[hh:hh+dt.timedelta(minutes=30)]
@@ -396,13 +402,13 @@ for hh in false30min:
         parafalse.varq[hh]=dfhh.var()
         parafalse.wd[hh]=np.round((np.arctan2(-dfIRGA.Uy[hh:hh+dt.timedelta(minutes=30)],dfIRGA.Ux[hh:hh+dt.timedelta(minutes=30)])*180/np.pi+245).mean(),1)
         parafalse.ws[hh]=np.round((np.sqrt(dfIRGA.Ux[hh:hh+dt.timedelta(minutes=30)]**2+dfIRGA.Uy[hh:hh+dt.timedelta(minutes=30)]**2)).mean(),1)
+        parafalse=parafalse.apply(pd.to_numeric)
     axwrong.plot(xaxis,dfhh)
     axwrong.set_title('all 170 time series of bad PS')
     axboth.plot(xaxis,dfhh,color='r',alpha=0.4)
 
 #whatswrong.legend()
 
-pararight=pd.DataFrame(index=right30min,columns=['Ts','wd','ws','varq'])
 a=0
 for hhyes in right30min:
     try:
@@ -415,9 +421,9 @@ for hhyes in right30min:
         pararight.varq[hhyes]=dfhhyes.var()
         pararight.wd[hhyes]=np.round((np.arctan2(-dfIRGA.Uy[hhyes:hhyes+dt.timedelta(minutes=30)],dfIRGA.Ux[hhyes:hhyes+dt.timedelta(minutes=30)])*180/np.pi+245).mean(),1)
         pararight.ws[hhyes]=np.round((np.sqrt(dfIRGA.Ux[hhyes:hhyes+dt.timedelta(minutes=30)]**2+dfIRGA.Uy[hhyes:hhyes+dt.timedelta(minutes=30)]**2)).mean(),1)
-
+        pararight=pararight.apply(pd.to_numeric)
     axright.plot(xaxis,dfhhyes,label=str(hhyes))
-    axright.set_title('all 756 time series of good PS')
+    axright.set_title('all 641 time series of good PS')
     axboth.plot(xaxis,dfhhyes,color='k',alpha=0.2)
 #thatsright.legend()    
 
@@ -430,7 +436,40 @@ axright.set_ylabel('Irga humidity in g/m3')
 axboth.set_ylabel('Irga humidity in g/m3')
 
 whatswrong.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_whatswrong'+'.png')
-    
+#%% look at parameters to identify causes for bad timeseries
+import windrose
+import matplotlib.cm as cm
+
+parahist,((ax1,ax2,ax3),(ax4,ax5,ax6),)=plt.subplots(2,3,figsize=(16,20))
+#ax1=windspeed
+ax1.hist(pararight.dropna().ws, 100,color='green',label='no spikes' )
+ax1.hist(parafalse.ws , 100,color='red',label='spikes' )
+ax1.legend()
+ax1.set_xlabel('m/s')
+ax1.set_title('wind speed')
+#ax2=varq
+ax2.hist(pararight.dropna().varq, 100,color='green',label='no spikes' )
+ax2.hist(parafalse.varq , 100,color='red',label='spikes' )
+ax2.legend()
+ax2.set_title('variance q')
+#ax3=varq
+ax3.hist(pararight.dropna().Ts, 100,color='green',label='no spikes' )
+ax3.hist(parafalse.Ts , 100,color='red',label='spikes' )
+ax3.legend()
+ax3.set_title('sonic Temp')
+ax3.set_xlabel('degree D')
+#ax4=windrose
+ax4.remove()
+ax4=parahist.add_subplot(2,3,4,projection='windrose')
+ax4.bar(parafalse.wd-245, parafalse.ws, normed=True, opening=1, edgecolor='white',cmap=cm.winter)
+ax4.set_title('spikes')
+ax5.remove()
+ax5=parahist.add_subplot(2,3,5,projection='windrose')
+ax5.bar(pararight.wd-245, pararight.ws, normed=True, opening=1, edgecolor='white',cmap=cm.winter)
+ax5.set_title('no spikes')
+
+parahist.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_spikesparams'+'.pdf')
+
 #%% look at both mean PS and hopefully see a nice -5/3 slope for the good PSem
 badPS=PS_IRGA19[PS_IRGA19.columns[:-1][highfreqmean>8*10**(-5)]]
 badPSqmean=badPS.mean(axis=1)
@@ -442,6 +481,29 @@ compPS=plt.figure()
 plt.loglog(badPSqmean,label='badPS')
 plt.loglog(goodPSqmean,label='goodPS')
 compPS.legend()
+#%%
+
+#normalize good PS
+def nearest(items, pivot):
+    return min(items, key=lambda x: abs(x - pivot))
+normfreq=nearest(goodPS.index,10**-2)
+#normidx=goodPS.index.get_loc(normfreq)
+
+goodPSnorm=pd.DataFrame(index=goodPS.index)
+
+for col in goodPS.columns:
+    goodPSnorm[col]=goodPS[col]/goodPS.loc[normfreq,col]
+
+goodPSnormmean=goodPSnorm.mean(axis=1)
+    
+PSnorm=plt.figure()
+for col in goodPSnorm:
+    plt.loglog(goodPSnorm.index,goodPSnorm[col],color='k',alpha=0.2)
+plt.loglog(goodPSnormmean,color='r')
+plt.loglog(goodPSnorm.index,goodPSnorm.index**(-5/3),':')
+#PSnorm.legend()
+
+
 
 #%% fitting a line through the good PS
 
@@ -457,9 +519,11 @@ yfit=10**(m*x+c)
 #ax1.loglog(PS_PIC19_gas18O.index,yfit,':',label='lin plot')
 print(m)
 
+xc=[x[0]]
+yc=[y.iloc[0]]
 # piecewise linear fit with pwlf
 my_pwlf = pwlf.PiecewiseLinFit(x, y)
-breaks18 = my_pwlf.fit (2)
+breaks18 = my_pwlf.fit (2,y_c=yc,x_c=xc)
 slopes = my_pwlf.calc_slopes()
 print('the first slope for good PS is'+ str(slopes[0]))
 print(breaks18)
@@ -471,7 +535,7 @@ ax1.set_ylabel('PS')
 
 ax1.loglog(goodPSqmean.index,ynew,'r',label='piecewise plot')
 ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes[0],2) }', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
-ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaks18[1])) }s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+ax1.text(0.6, 0.65, f'the first break is at Hz= {10**breaks18[1]}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 
 ax1.loglog(goodPSqmean.index,1e-5*goodPSqmean.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
 ax1.legend()
