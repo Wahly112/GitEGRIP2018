@@ -93,3 +93,24 @@ exportdf(lev1,'/Users/swa048/forServer/Vapour/2018/processed_data_combined/','EG
 exportdf(lev2,'/Users/swa048/forServer/Vapour/2018/processed_data_combined/','EG18_level2')
 exportdf(lev3,'/Users/swa048/forServer/Vapour/2018/processed_data_combined/','EG18_level3')
 exportdf(lev4,'/Users/swa048/forServer/Vapour/2018/processed_data_combined/','EG18_level4')
+
+#%% export the full dataset, not only the means
+
+cols=['DOY','Valve','','H2O','d17O','d18O','dD']
+PIC2140_2018=pd.DataFrame(data=tdata3['D_VSMOW'],columns=cols)
+PIC2140_2018.index=pd.to_datetime('2019-1-1') + pd.to_timedelta(PIC2140_2018.DOY, unit='D') - pd.Timedelta(days=1)
+exportdf(PIC2140_2018,'/Users/swa048/forServer/Vapour/2018/processed_data_combined/','EGRIP2018_2140calibrated')
+#%%
+
+cols2120=['DOY','Valve','H2O','d18O','dD']
+PIC2120_2018=pd.DataFrame(data=tdata2['D_VSMOW'],columns=cols2120)
+PIC2120_2018.index=pd.to_datetime('2019-1-1') + pd.to_timedelta(PIC2120_2018.DOY, unit='D') - pd.Timedelta(days=1)
+exportdf(PIC2120_2018,'/Users/swa048/forServer/Vapour/2018/processed_data/','EGRIP2018_2120calibrated')
+
+
+
+#%%
+cols2140bad=['DOY','Valve','H2O','d18O','dD']
+PICbroken_2018=pd.DataFrame(data=tdata1['D_VSMOW'],columns=cols2140bad)
+PICbroken_2018.index=pd.to_datetime('2019-1-1') + pd.to_timedelta(PICbroken_2018.DOY, unit='D') - pd.Timedelta(days=1)
+exportdf(PICbroken_2018,'/Users/swa048/forServer/Vapour/2018/processed_data/','EGRIP2018_BROKEcalibrated')
