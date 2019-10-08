@@ -109,10 +109,11 @@ deltatogas(dfPIC)   #change =17=TRUE when B for O17 is known
 
 #import20Hz data despiked
 dfIRGAq=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR6/'+'EGRIP_CR6q_despiked.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+dfIRGA=dfcr6f
 
 #import the 
-#dfLICOR=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR5000/EGRIP_CR5Fluxall.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-#dfLICOR.rename(inplace=True,columns={'H2O_mmolpm3':'q'})
+dfLICOR=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR5000/EGRIP_CR5Fluxall.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+dfLICOR.rename(inplace=True,columns={'H2O_mmolpm3':'q'})
 
 #%%
 #first look at data
@@ -138,7 +139,7 @@ if loadnewPIC:
      
 else:
     #non binned 
-    file=open('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'+'goodtimes_q.txt','r')
+    file=open('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'+'goodtimescr6_q.txt','r')
     ECgood=file.read().split(' ')
     ECgood=pd.to_datetime(ECgood,infer_datetime_format=True)
     PS_PIC19_q=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_PIC19_q_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
@@ -150,23 +151,29 @@ else:
 loadnewEC=1
 if loadnewEC:
     #EC with same times
-    PS_IRGA19=binaveragePS_EC(dfIRGAq,colname='q',starttimes=ECgood)
-    PS_IRGA19_w=binaveragePS_EC(dfIRGA,colname='Uz',starttimes=ECstart)
-    PS_LICOR19=binaveragePS_EC(dfLICOR,starttimes=ECstart)
-    PS_IRGA19_detrend=binaveragePS_EC(dfIRGA,ECstart[100:200])
+    file=open('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'+'goodtimescr6_q.txt','r')
+    ECgoodcr6=file.read().split(' ')
+    ECgoodcr6=pd.to_datetime(ECgoodcr6,infer_datetime_format=True)
+    PS_IRGA19=binaveragePS_EC(dfIRGAq,colname='q',starttimes=ECgoodcr6)
+    PS_IRGA19_w=binaveragePS_EC(dfIRGA,colname='Uz',starttimes=ECgoodcr6)
+    file5=open('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'+'goodtimescr5_1.txt','r')
+    ECgoodcr5=file5.read().split(' ')
+    ECgoodcr5=pd.to_datetime(ECgoodcr5,infer_datetime_format=True)
+    PS_LICOR19=binaveragePS_EC(dfLICOR,starttimes=ECgoodcr5)
+    #PS_IRGA19_detrend=binaveragePS_EC(dfIRGA,ECstart[100:200])
     #save dataframes
     import csv
     pathsave='/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'
     PS_IRGA19.to_csv(pathsave+'PS_IRGA19_nb'+'.txt', header=PS_IRGA19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
     PS_IRGA19_w.to_csv(pathsave+'PS_IRGA19_w_nb'+'.txt', header=PS_IRGA19_w.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
     PS_LICOR19.to_csv(pathsave+'PS_LICOR19_nb'+'.txt', header=PS_LICOR19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
-    PS_IRGA19_detrend.to_csv(pathsave+'PS_IRGA19_detrend'+'.txt', header=PS_IRGA19_detrend.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
+    #PS_IRGA19_detrend.to_csv(pathsave+'PS_IRGA19_detrend'+'.txt', header=PS_IRGA19_detrend.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
 else:
     PS_IRGA19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
     #PSIRGA_binned=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19.txt',index_col=0,parse_dates=True,na_values=['NAN'])
     PS_IRGA19_w=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_w_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
     PS_LICOR19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_LICOR19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-    PS_IRGA19_detrend=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_detrend.txt',index_col=0,parse_dates=True,na_values=['NAN']) #a reduced number of ogive computations,linealary detrended instead of constat detrend
+    #PS_IRGA19_detrend=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_detrend.txt',index_col=0,parse_dates=True,na_values=['NAN']) #a reduced number of ogive computations,linealary detrended instead of constat detrend
     #save dataframes
 
 
@@ -175,7 +182,7 @@ PS_PIC19_q['qmean']=PS_PIC19_q.mean(axis=1)
 PS_PIC19_gas18O['gas18Omean']=PS_PIC19_gas18O.mean(axis=1)
 PS_PIC19_gasD['gasDmean']=PS_PIC19_gasD.mean(axis=1)
 PS_IRGA19['qmean']=PS_IRGA19.mean(axis=1)
-PS_IRGA19_detrend['qmean']=PS_IRGA19_detrend.mean(axis=1)
+#PS_IRGA19_detrend['qmean']=PS_IRGA19_detrend.mean(axis=1)
 PS_IRGA19_w['wmean']=PS_IRGA19_w.mean(axis=1)
 PS_LICOR19['qmean']=PS_LICOR19.mean(axis=1)
 #%%  plot the different Averaged Power spectra
@@ -183,8 +190,6 @@ means,ax1=plt.subplots(figsize=(12,6))
 ax1.loglog(PS_PIC19_q.index,PS_PIC19_q.qmean,color='darkcyan',label='q mean constant')
 ax1.loglog(PS_PIC19_q.index,PS_PIC19_q[PS_PIC19_q.columns[200]],color='darkcyan',alpha=0.5)
 
-
-ax1.loglog(PS_IRGA19_detrend.index,PS_IRGA19_detrend.qmean,color='darkcyan',label='q mean linear')
 
 #h=ax1.get_ylim()
 #logdiff=np.log10(h[1])-np.log10(h[0])
@@ -314,27 +319,10 @@ slopesD.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_p
 #%%
 # plot for humidity from Irgason in g/m3
 slopesIRGA,ax1=plt.subplots(figsize=(12,6))
-#ax1.loglog(PS_IRGA19_detrend.index,PS_IRGA19_detrend.qmean,color='blueviolet',label='Irga hum mean linear')
 ax1.loglog(PS_IRGA19.index,PS_IRGA19.qmean,color='maroon',label='Irga hum mean despiked')
 
 
 # linear fit model for loglog plot
-#x=np.log10(PS_IRGA19_detrend.index)
-#y=np.log10(PS_IRGA19_detrend.qmean)
-
-#m,c=np.polyfit(x,y,1)
-#yfit=10**(m*x+c)
-#ax1.loglog(PS_IRGA19_detrend.index,yfit,':',color='orange',label='lin plot')
-#print(m)
-#
-## piecewise linear fit with pwlf
-#my_pwlf = pwlf.PiecewiseLinFit(x, y)
-#breaksIRGA = my_pwlf.fit (3)
-#slopes = my_pwlf.calc_slopes()
-#print('the first hum slope is'+ str(slopes[0]))
-#print(breaksIRGA)
-#ynew=10**(my_pwlf.predict(x))
-
 xb=np.log10(PS_IRGA19.index)
 yb=np.log10(PS_IRGA19.qmean)
 
@@ -346,7 +334,6 @@ print(breaksIRGA_b)
 ynew_b=10**(my_pwlf_b.predict(xb))
 
 ax1.loglog(PS_IRGA19.index,ynew_b,'pink',label='piecewise plot')
-#ax1.loglog(PS_IRGA19_detrend.index,ynew,'r',label='piecewise plot_binned')
 ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes_b[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaksIRGA_b[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.loglog(PS_IRGA19.index,1e-5*PS_IRGA19.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
@@ -354,7 +341,7 @@ ax1.set_title('Irgason humidity signal')
 ax1.set_xlabel('frequencies in Hz')
 ax1.set_ylabel('PS in (g/m^3)/s^2')
 ax1.legend()
-#slopesIRGA.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_IRGA'+'.pdf')
+slopesIRGA.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_IRGA'+'.pdf')
 #%% Plot for LICOR data
 slopesLICOR,ax1=plt.subplots(figsize=(12,6))
 ax1.loglog(PS_LICOR19.index,PS_LICOR19.qmean,color='maroon',label='LICOR hum mean')
