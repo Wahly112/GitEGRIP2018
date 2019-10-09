@@ -109,9 +109,10 @@ deltatogas(dfPIC)   #change =17=TRUE when B for O17 is known
 
 #import20Hz data despiked
 dfIRGAq=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR6/'+'EGRIP_CR6q_despiked.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-dfIRGA=dfcr6f
 
-#import the 
+dfIRGAwind=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dfcr6U_tiltcorrected.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+
+#import the despiked LICOR data, momentan noch nicht available weil der zweite Teil der Flux
 dfLICOR=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR5000/EGRIP_CR5Fluxall.txt',index_col=0,parse_dates=True,na_values=['NAN'])
 dfLICOR.rename(inplace=True,columns={'H2O_mmolpm3':'q'})
 
@@ -122,6 +123,7 @@ ax1.plot(dfPIC.gas18O,'*',color='blue')
 ax2=ax1.twinx()
 ax2.plot(dfPIC.gasD,'s',color='brown')
 ovview.legend()
+
 
 #%%
 loadnewPIC=0
@@ -166,7 +168,7 @@ if loadnewEC:
     pathsave='/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'
     PS_IRGA19.to_csv(pathsave+'PS_IRGA19_nb'+'.txt', header=PS_IRGA19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
     PS_IRGA19_w.to_csv(pathsave+'PS_IRGA19_w_nb'+'.txt', header=PS_IRGA19_w.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
-    PS_LICOR19.to_csv(pathsave+'PS_LICOR19_nb'+'.txt', header=PS_LICOR19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
+    PS_LICOR19.to_csv(pathsave+'PS_LICOR19_1_nb'+'.txt', header=PS_LICOR19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
     #PS_IRGA19_detrend.to_csv(pathsave+'PS_IRGA19_detrend'+'.txt', header=PS_IRGA19_detrend.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
 else:
     PS_IRGA19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
@@ -366,11 +368,11 @@ print(breaksLICOR)
 ynew=10**(my_pwlf.predict(x))
 
 
-ax1.loglog(PS_LICOR19.index,ynew,'r',label='piecewise plot_binned')
+ax1.loglog(PS_LICOR19.index,ynew,'r',label='piecewise')
 ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaksLICOR[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.loglog(PS_LICOR19.index,PS_LICOR19.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
-ax1.set_title('LICOR humidity signal')
+ax1.set_title('LICOR humidity signal, first half of field season')
 ax1.set_xlabel('frequencies in Hz')
 ax1.set_ylabel('PS in (mol/m^3)/s^2')
 ax1.legend()
@@ -392,22 +394,22 @@ print(m)
 
 # piecewise linear fit with pwlf
 my_pwlf = pwlf.PiecewiseLinFit(x, y)
-breaks_w = my_pwlf.fit (3)
+breaks_w = my_pwlf.fit (2)
 slopes = my_pwlf.calc_slopes()
-print('the first hum slope is'+ str(slopes[0]))
+print('the second hum slope is'+ str(slopes[1]))
 print(breaks_w)
 ynew=10**(my_pwlf.predict(x))
 
 
-ax1.loglog(PS_IRGA19_w.index,ynew,'r',label='piecewise plot_binned')
-ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+ax1.loglog(PS_IRGA19_w.index,ynew,'r',label='piecewise')
+ax1.text(0.4, 0.85, f'slope of second segment= {np.round(slopes[1],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaks_w[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.loglog(PS_IRGA19_w.index,1e-2*PS_IRGA19_w.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
-ax1.set_title('vertical wind signal')
+ax1.set_title('vertical wind signal, non-despiked w-data')
 ax1.set_xlabel('frequencies in Hz')
 ax1.set_ylabel('PS in (m/s)/s^2')
 ax1.legend()
-slopes_w.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_w'+'.pdf')
+slopes_w.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_w_raw'+'.pdf')
 #%% plot the individual PS
 highfreqmean=PS_IRGA19[PS_IRGA19.columns[:-1]][5:10].mean()   
 highfreqmedian=PS_IRGA19[PS_IRGA19.columns[:-1]][5:10].median()
