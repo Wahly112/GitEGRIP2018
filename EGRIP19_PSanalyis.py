@@ -113,8 +113,8 @@ dfIRGAq=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR6/'+'EGRIP_CR6q_des
 dfIRGAwind=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/dfcr6U_tiltcorrected.txt',index_col=0,parse_dates=True,na_values=['NAN'])
 
 #import the despiked LICOR data, momentan noch nicht available weil der zweite Teil der Flux
-dfLICOR=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR5000/EGRIP_CR5Fluxall.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-dfLICOR.rename(inplace=True,columns={'H2O_mmolpm3':'q'})
+dfLICOR=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2019/CR5000/EGRIP_CR5q_despiked.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+
 
 #%%
 #first look at data
@@ -158,7 +158,7 @@ if loadnewEC:
     ECgoodcr6=pd.to_datetime(ECgoodcr6,infer_datetime_format=True)
     PS_IRGA19=binaveragePS_EC(dfIRGAq,colname='q',starttimes=ECgoodcr6)
     PS_IRGA19_w=binaveragePS_EC(dfIRGA,colname='Uz',starttimes=ECgoodcr6)
-    file5=open('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'+'goodtimescr5_1.txt','r')
+    file5=open('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'+'goodtimescr5.txt','r')
     ECgoodcr5=file5.read().split(' ')
     ECgoodcr5=pd.to_datetime(ECgoodcr5,infer_datetime_format=True)
     PS_LICOR19=binaveragePS_EC(dfLICOR,starttimes=ECgoodcr5)
@@ -168,13 +168,13 @@ if loadnewEC:
     pathsave='/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/'
     PS_IRGA19.to_csv(pathsave+'PS_IRGA19_nb'+'.txt', header=PS_IRGA19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
     PS_IRGA19_w.to_csv(pathsave+'PS_IRGA19_w_nb'+'.txt', header=PS_IRGA19_w.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
-    PS_LICOR19.to_csv(pathsave+'PS_LICOR19_1_nb'+'.txt', header=PS_LICOR19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
+    PS_LICOR19.to_csv(pathsave+'PS_LICOR19_despiked'+'.txt', header=PS_LICOR19.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
     #PS_IRGA19_detrend.to_csv(pathsave+'PS_IRGA19_detrend'+'.txt', header=PS_IRGA19_detrend.columns, sep=',', mode='w',quoting=csv.QUOTE_NONNUMERIC) 
 else:
     PS_IRGA19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
     #PSIRGA_binned=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19.txt',index_col=0,parse_dates=True,na_values=['NAN'])
     PS_IRGA19_w=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_w_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-    PS_LICOR19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_LICOR19_nb.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+    PS_LICOR19=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_LICOR19_despiked.txt',index_col=0,parse_dates=True,na_values=['NAN'])
     #PS_IRGA19_detrend=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/dataframes/PS_IRGA19_detrend.txt',index_col=0,parse_dates=True,na_values=['NAN']) #a reduced number of ogive computations,linealary detrended instead of constat detrend
     #save dataframes
 
@@ -345,7 +345,7 @@ ax1.set_ylabel('PS in (g/m^3)/s^2')
 ax1.legend()
 slopesIRGA.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_IRGA'+'.pdf')
 #%% Plot for LICOR data
-slopesLICOR,ax1=plt.subplots(figsize=(12,6))
+figslopesLICOR,ax1=plt.subplots(figsize=(12,6))
 ax1.loglog(PS_LICOR19.index,PS_LICOR19.qmean,color='maroon',label='LICOR hum mean')
 
 
@@ -354,29 +354,54 @@ x=np.log10(PS_LICOR19.index)
 y=np.log10(PS_LICOR19.qmean)
 
 
-m,c=np.polyfit(x,y,1)
-yfit=10**(m*x+c)
+mLICOR,cLICOR=np.polyfit(x,y,1)
+yfit=10**(mLICOR*x+cLICOR)
 ax1.loglog(PS_LICOR19.index,yfit,':',color='orange',label='lin plot')
-print(m)
+print(mLICOR)
 
 # piecewise linear fit with pwlf
 my_pwlf = pwlf.PiecewiseLinFit(x, y)
-breaksLICOR = my_pwlf.fit (3)
-slopes = my_pwlf.calc_slopes()
-print('the first hum slope is'+ str(slopes[0]))
+breaksLICOR = my_pwlf.fit (2)
+slopesLICOR = my_pwlf.calc_slopes()
+print('the second hum slope is'+ str(slopesLICOR[1]))
 print(breaksLICOR)
-ynew=10**(my_pwlf.predict(x))
+ynewLICOR=10**(my_pwlf.predict(x))
 
 
-ax1.loglog(PS_LICOR19.index,ynew,'r',label='piecewise')
-ax1.text(0.4, 0.85, f'slope of first segment= {np.round(slopes[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+ax1.loglog(PS_LICOR19.index,ynewLICOR,'r',label='piecewise')
+ax1.text(0.4, 0.85, f'piecewise slope of first segment= {np.round(slopesLICOR[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+ax1.text(0.5, 0.75, f'linear fit slope is= {np.round(mLICOR,2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
 ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaksLICOR[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
-ax1.loglog(PS_LICOR19.index,PS_LICOR19.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
-ax1.set_title('LICOR humidity signal, first half of field season')
+ax1.loglog(PS_LICOR19.index,1e-4*PS_LICOR19.index**(-5/3),color='cadetblue',LineStyle=':',label='-5/3')
+ax1.set_title('LICOR humidity signal despiked, first half of field season')
 ax1.set_xlabel('frequencies in Hz')
-ax1.set_ylabel('PS in (mol/m^3)/s^2')
+ax1.set_ylabel('PS in (g/m^3)/s^2')
 ax1.legend()
-slopesLICOR.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_LICOR'+'.pdf')
+figslopesLICOR.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_LICOR_despiked'+'.pdf')
+#%% plot the different Averaged Power spectra LICOR and IRGA
+slopesboth,ax1=plt.subplots(figsize=(12,6))
+ax1.loglog(PS_LICOR19.index,PS_LICOR19.qmean,color='maroon',label='LICOR despiked')
+ax1.loglog(PS_LICOR19.index,ynewLICOR,'r',label='piecewise linear fit')
+ax1.text(0.4, 0.85, f'piecewise slope of first segment= {np.round(slopesLICOR[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes,color='maroon')
+#ax1.text(0.5, 0.75, f'linear fit slope is= {np.round(m,2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes)
+ax1.text(0.6, 0.65, f'the first break is at period= {np.round(1/(10**breaksLICOR[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes,color='maroon')
+#ax1.loglog(PS_LICOR19.index,1e-4*PS_LICOR19.index**(-5/3),color='maroon',LineStyle=':',label='-5/3')
+#ax1.set_title('LICOR humidity signal despiked, first half of field season')
+ax1.set_xlabel('frequencies in Hz')
+ax1.set_ylabel('PS in (g/m^3)/s^2')
+
+ax1.loglog(PS_IRGA19.index,PS_IRGA19.qmean,color='steelblue',label='IRGA despiked')
+ax1.loglog(PS_IRGA19.index,ynew_b,'pink',label='piecewise linear fit')
+ax1.text(0.2, 0.4, f'piecewise slope of first segment= {np.round(slopes_b[0],2)}', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes,color='steelblue')
+ax1.text(0.3, 0.3, f'the first break is at period= {np.round(1/(10**breaksIRGA_b[1]))}s', horizontalalignment='center',verticalalignment='center', transform=ax1.transAxes,color='steelblue')
+ax1.loglog(PS_IRGA19.index,1e-4*PS_IRGA19.index**(-5/3),color='black',LineStyle=':',label='-5/3')
+ax1.set_ylim(1e-6,1e2)
+#ax2.set_title('Irgason humidity signal')
+
+
+slopesboth.legend()
+slopesboth.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_humidity_despiked'+'.pdf')
+
 #%% IRGA_w plot
 slopes_w,ax1=plt.subplots(figsize=(12,6))
 ax1.loglog(PS_IRGA19_w.index,PS_IRGA19_w.wmean,color='maroon',label='vertical wind')
@@ -614,3 +639,6 @@ ax1.loglog(goodPSqmean.index,1e-5*goodPSqmean.index**(-5/3),color='cadetblue',Li
 ax1.legend()
 #goodPS.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/Isoflux_plots/cutfreq/'+'EGRIP19_IRGAgood'+'.pdf')
 
+#%% Convergence
+from loadandconvert import convergence
+dfgoodS,dfogives=convergence(Seriesdesp_S,Seriesdesp_w,Scalar='q',fs_data=20,period=30,starttimes=goodtimes[:5],dfSgood_ad=,ogivesout=False)

@@ -26,7 +26,7 @@ import matplotlib.cm as cm
 
 #%% EGRIP season 20.05.18-03.08.18
 #read in the TK3 flux files
-EGRIP=1
+EGRIP=0
 if EGRIP:
     path='/Users/swa048/forServer/Meteo/EC/2018/EGRIP/fluxes_processed_TK3/'
     file1='EGRIP2018_period1_result_1901180949.csv'
@@ -269,7 +269,7 @@ if KOHNEN:
         #comparison daily mean values
     KOHNENdaily=flux_cleanLE_KO.resample('1D').mean()  #LE=IRGASON , LvE=TK3
     KOHNENdailyHs=flux_cleanHS_KO.resample('1D').mean()
-    #%%
+    #%% latent heat flux comparison
     fig1ko,(ax1,ax2,ax3)=plt.subplots(3,1)
     ax1.plot(fluxIRGA.LE,color='fuchsia',label='Irgason')
     
@@ -388,3 +388,54 @@ if KOHNEN:
     ax3.set_legend()
     ax3.set_title('TK3 30min, wind-dir-compass')
     windroseKOHNEN.savefig('/Users/swa048/Documents/Data/Kohnen_Data/Kohnen_plots/Wind/'+'windroseKOHNEN'+'.pdf')  
+
+#%% EGRIP 19 28.05.2019-29.07.2019
+EGRIP19=1
+if EGRIP19:
+
+
+    
+    NoffsetEG19=245 #degrees from North
+    
+    fluxTK3_cr6=loadfluxperiod('/Users/swa048/forServer/Meteo/EC/2019/CR6/','EGRIP2019_CR6_result_1908161736.csv','2019-05-28 00:00','2019-07-07 15:45')
+    #fluxTK3_cr62=loadfluxperiod('/Users/swa048/forServer/Meteo/EC/2019/CR6/','EGRIP2019_CR6_result_1908161736.csv','2019-05-28 00:00','2019-07-07 15:45')
+    
+    
+    #fluxTK3_cr6=pd.concat((fluxTK3_cr6,fluxTK3_cr62),sort=False)#sort=True)
+    
+    fluxIRGA_EG19=loadCSIfluxperiod('/Users/swa048/forServer/Meteo/EC/2019/CR6/CR6Series_Flux_CSIFormat.dat','2019-05-28 00:00','2019-07-07 16:00')
+    
+    
+    fluxcomb_EG19=pd.concat([fluxIRGA_EG19,fluxTK3_cr6],axis=1)
+    flux_cleanLE_EG19=fluxcomb_EG19[['LE','LvE']].dropna()
+
+    # sensible heat
+    flux_cleanHS_EG19=fluxcomb_EG19[['H','HTs']].dropna()
+
+
+    #comparison daily mean values
+    EGRIP19daily=flux_cleanLE_EG19.resample('1D').mean()  #LE=IRGASON , LvE=TK3
+    EGRIP19dailyHs=flux_cleanHS_EG19.resample('1D').mean()
+    #%% latent heat flux comparison
+    fig1EG19,(ax1,ax2,ax3)=plt.subplots(3,1)
+    ax1.plot(fluxIRGA_EG19.LE,color='fuchsia',label='Irgason')
+
+    ax1.plot(fluxTK3_cr6.LvE,color='seagreen',label='TK3')
+    ax1.set_title('Comnparison latent heat EG19HNEN 18/19')
+    ax1.axhline(linestyle=':')
+    ax1.set_ylabel(' Wm-2')
+    ax1.set_ylim(-10,20)
+    ax1.legend()
+    
+    ax2.plot(flux_cleanLE_EG19.LE-flux_cleanLE_EG19.LvE,label='IRGA-TK3')
+    ax2.set_ylabel(' Wm-2')
+    ax2.text(0.2, 0.1, f'mean diff = {np.round(np.mean(flux_cleanLE_EG19.LE-flux_cleanLE_EG19.LvE),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
+    ax2.text(0.6, 0.1, f'variance diff = {np.round(np.var(flux_cleanLE_EG19.LE-flux_cleanLE_EG19.LvE),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
+    #ax2.set_xlim('2018-12-13','2019-01-18')
+    ax2.set_ylim(-5,5)
+    ax2.grid(True)
+    
+    ax3.hist(flux_cleanLE_EG19.LE['2019-05-28':'2019-07-07']-flux_cleanLE_EG19.LvE['2019-05-28':'2019-07-07'],40,label='diff')
+    ax3.set_xlabel(' Wm-2')
+    fig1EG19.legend(loc='lower right')
+    fig1EG19.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/EGRIP_plots2019/flux/'+'fluxLE_comparison_EGRIP19'+'.pdf') 
