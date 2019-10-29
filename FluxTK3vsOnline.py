@@ -407,6 +407,8 @@ if EGRIP19:
     
     
     fluxcomb_EG19=pd.concat([fluxIRGA_EG19,fluxTK3_cr6],axis=1)
+    removeoutliers(fluxcomb_EG19,'LE',25,-10)
+    removeoutliers(fluxcomb_EG19,'LvE',25,-10)
     flux_cleanLE_EG19=fluxcomb_EG19[['LE','LvE']].dropna()
 
     # sensible heat
@@ -417,25 +419,30 @@ if EGRIP19:
     EGRIP19daily=flux_cleanLE_EG19.resample('1D').mean()  #LE=IRGASON , LvE=TK3
     EGRIP19dailyHs=flux_cleanHS_EG19.resample('1D').mean()
     #%% latent heat flux comparison
-    fig1EG19,(ax1,ax2,ax3)=plt.subplots(3,1)
+    import matplotlib.dates as mdates
+    timefmt=mdates.DateFormatter('%y-%m-%d')
+    fig1EG19,(ax1,ax2,ax3)=plt.subplots(3,1,figsize=(18,6))
     ax1.plot(fluxIRGA_EG19.LE,color='fuchsia',label='Irgason')
 
     ax1.plot(fluxTK3_cr6.LvE,color='seagreen',label='TK3')
-    ax1.set_title('Comnparison latent heat EG19HNEN 18/19')
+    ax1.set_title('Comnparison latent heat EGRIP19')
     ax1.axhline(linestyle=':')
     ax1.set_ylabel(' Wm-2')
-    ax1.set_ylim(-10,20)
+    ax1.xaxis.set_major_formatter(timefmt)
+    ax1.set_ylim(-10,25)
     ax1.legend()
     
     ax2.plot(flux_cleanLE_EG19.LE-flux_cleanLE_EG19.LvE,label='IRGA-TK3')
     ax2.set_ylabel(' Wm-2')
     ax2.text(0.2, 0.1, f'mean diff = {np.round(np.mean(flux_cleanLE_EG19.LE-flux_cleanLE_EG19.LvE),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
     ax2.text(0.6, 0.1, f'variance diff = {np.round(np.var(flux_cleanLE_EG19.LE-flux_cleanLE_EG19.LvE),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
+    ax2.xaxis.set_major_formatter(timefmt)
     #ax2.set_xlim('2018-12-13','2019-01-18')
     ax2.set_ylim(-5,5)
     ax2.grid(True)
+    ax2.legend()
     
     ax3.hist(flux_cleanLE_EG19.LE['2019-05-28':'2019-07-07']-flux_cleanLE_EG19.LvE['2019-05-28':'2019-07-07'],40,label='diff')
     ax3.set_xlabel(' Wm-2')
-    fig1EG19.legend(loc='lower right')
+    ax3.legend() #loc='lower right'
     fig1EG19.savefig('/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2019/EGRIP_plots2019/flux/'+'fluxLE_comparison_EGRIP19'+'.pdf') 
