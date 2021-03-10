@@ -17,6 +17,7 @@ from scipy import stats as scistats
 import matplotlib.pyplot as plt
 
 from loadandconvert import loadfluxperiod,removeoutliers,loadCSIfluxperiod,dfperiodfun,loadperiod
+from loadandconvert import lscatter
 import scipy.stats
 
 import windrose
@@ -26,7 +27,7 @@ import matplotlib.cm as cm
 
 #%% EGRIP season 20.05.18-03.08.18
 #read in the TK3 flux files
-EGRIP=0
+EGRIP=1
 if EGRIP:
     path='/Users/swa048/forServer/Meteo/EC/2018/EGRIP/fluxes_processed_TK3/'
     file1='EGRIP2018_period1_result_1901180949.csv'
@@ -37,12 +38,12 @@ if EGRIP:
     file32nd='EGRIP2018_period3new_result_1908130218.csv'
     
     
-    flux1=loadfluxperiod(path,file1,'2018-05-20 00:15','2018-05-25 16:15')
-    flux12nd=loadfluxperiod(path,file12nd,'2018-05-20 00:15','2018-05-25 16:15')
-    flux2=loadfluxperiod(path,file2,'2018-05-25 17:15','2018-07-04 19:45')
-    flux22nd=loadfluxperiod(path,file22nd,'2018-05-25 17:15','2018-07-04 19:45')
-    flux3=loadfluxperiod(path,file3,'2018-07-04 20:15','2018-08-03 11:15')
-    flux32nd=loadfluxperiod(path,file32nd,'2018-07-04 20:15','2018-08-03 11:15')
+    flux1=loadfluxperiod(path,file1)
+    flux12nd=loadfluxperiod(path,file12nd)
+    flux2=loadfluxperiod(path,file2)
+    flux22nd=loadfluxperiod(path,file22nd)
+    flux3=loadfluxperiod(path,file3)
+    flux32nd=loadfluxperiod(path,file32nd)
     
     fluxTK3=pd.concat((flux1,flux2,flux3),sort=False)#sort=True)
     fluxTK32nd=pd.concat((flux12nd,flux22nd,flux32nd),sort=False)
@@ -64,16 +65,24 @@ if EGRIP:
     fluxONper=dfperiodfun(fluxON,'2018-06-11','2018-06-20')
     
     period='30'
-    #read in the computed wind dir and wind speed from the 20Hz data for the time, we coutinuously ran in 2m height
-    #period 
-    dfWDwq=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/datatables/dfWDwq_'+period+'_EGRIP.txt',index_col=0,parse_dates=True,na_values=['NAN'])    
-    dfWSwq=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/datatables/dfWSwq_'+period+'_EGRIP.txt',index_col=0,parse_dates=True,na_values=['NAN'])  
+    # #read in the computed wind dir and wind speed from the 20Hz data for the time, we coutinuously ran in 2m height
+    # #period 
+    # dfWDwq=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/datatables/dfWDwq_'+period+'_EGRIP.txt',index_col=0,parse_dates=True,na_values=['NAN'])    
+    # dfWSwq=pd.read_csv('/Users/swa048/Documents/OneDrive/Dokumente/EC/Isoflux/datatables/dfWSwq_'+period+'_EGRIP.txt',index_col=0,parse_dates=True,na_values=['NAN'])  
     
-    Noffset=242
+    # Noffset=242
     
-    allWD_compass=(dfWDwq.iloc[0] +Noffset) % 360
-    allWD=dfWDwq.iloc[0] % 360
-    allWS=dfWSwq.iloc[0]
+    # allWD_compass=(dfWDwq.iloc[0] +Noffset) % 360
+    # allWD=dfWDwq.iloc[0] % 360
+    # allWS=dfWSwq.iloc[0]
+    #%% trying Lauras functions
+    lscatter(fluxTK3.HTs, fluxTK32nd.HTs, xlim=[-50,30], ylim=[-50,30], correlate=True, plot_fit=True, one2one=True, synchronize_time=False, subplots=(1,1,1), color=[0.,0.2,0.45], alpha=0.2, time_resoution_in_seconds=1*60*30)
+    
+    lscatter(flux2.LvE, flux22nd.LvE, xlim=[-50,30], ylim=[-50,30], correlate=True, plot_fit=True, one2one=True, synchronize_time=False, subplots=(1,1,1), color=[0.,0.6,0.45], alpha=0.2, time_resoution_in_seconds=1*60*30)
+    
+    
+    
+    
 
     #%% pearson correlation
     #latent heat
@@ -94,10 +103,10 @@ if EGRIP:
     windroseEGRIP=plt.figure(figsize=(24,6))
 
     #Subplot 1: 
-    ax1 = windroseEGRIP.add_subplot(131,projection='windrose')
-    ax1.bar(allWD_compass, allWS, normed=True, opening=1, edgecolor='white',cmap=cm.hot)
-    ax1.set_legend()
-    ax1.set_title('30min own calculation, wind-dir-compass')
+    # ax1 = windroseEGRIP.add_subplot(131,projection='windrose')
+    # ax1.bar(allWD_compass, allWS, normed=True, opening=1, edgecolor='white',cmap=cm.hot)
+    # ax1.set_legend()
+    # ax1.set_title('30min own calculation, wind-dir-compass')
     
     #Subplot 2:
     ax2 = windroseEGRIP.add_subplot(132,projection='windrose')
@@ -140,7 +149,7 @@ if EGRIP:
     fig2,(ax1,ax2,ax3)=plt.subplots(3,1)
     ax1.plot(fluxON.Hs,color='darkorchid',label='online')
     ax1.set_ylabel('Wm-2')
-    ax1.set_xlim('2018-05-20','2018-08-03')
+    ax1.set_xlim(pd.to_datetime('2018-05-20'),pd.to_datetime('2018-08-03'))
     
     #ax2=ax1.twinx()
     ax1.plot(fluxTK32nd.HTs,color='palegreen',label='TK3')
@@ -186,7 +195,7 @@ if EGRIP:
     figdaily,(ax1,ax2,ax3)=plt.subplots(3,1)
     ax1.plot(fluxONdaily.LE,color='darkorchid',label='online',MarkerSize=4)
     ax1.set_ylabel('Wm-2')
-    ax1.set_xlim('2018-05-20','2018-08-03')
+    ax1.set_xlim(pd.to_datetime('2018-05-20'),pd.to_datetime('2018-08-03'))
     
     #ax2=ax1.twinx()
     ax1.plot(EGRIP18daily.LvE,color='palegreen',label='TK3 k=-0.2',MarkerSize=4)
@@ -201,7 +210,7 @@ if EGRIP:
     ax2.set_ylabel(' Wm-2')
     ax2.text(0.2, 0.1, f'mean diffnew = {np.round(np.mean(fluxONdaily.LE-EGRIP18daily.LvE),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
     ax2.text(0.6, 0.1, f'variance diff new= {np.round(np.var(fluxONdaily.LE-EGRIP18daily.LvE),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
-    ax2.set_xlim('2018-05-20','2018-08-03')
+    ax2.set_xlim(pd.to_datetime('2018-05-20'),pd.to_datetime('2018-08-03'))
     #ax2.set_ylim(-5,5)
     ax2.grid(True)
     
@@ -214,7 +223,7 @@ if EGRIP:
     figdaily,(ax1,ax2,ax3)=plt.subplots(3,1)
     ax1.plot(fluxONdaily.Hs,color='darkorchid',label='online',MarkerSize=4)
     ax1.set_ylabel('Wm-2')
-    ax1.set_xlim('2018-05-20','2018-08-03')
+    ax1.set_xlim(pd.to_datetime('2018-05-20'),pd.to_datetime('2018-08-03'))
     
     #ax2=ax1.twinx()
     ax1.plot(EGRIP18daily.HTs,color='palegreen',label='TK3',MarkerSize=4)
@@ -226,7 +235,7 @@ if EGRIP:
     ax2.set_ylabel(' Wm-2')
     ax2.text(0.2, 0.1, f'mean diff = {np.round(np.mean(fluxONdaily.Hs-EGRIP18daily.HTs),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
     ax2.text(0.6, 0.1, f'variance diff = {np.round(np.var(fluxONdaily.Hs-EGRIP18daily.HTs),2)}', horizontalalignment='center',verticalalignment='center', transform=ax3.transAxes)
-    ax2.set_xlim('2018-05-20','2018-08-03')
+    ax2.set_xlim(pd.to_datetime('2018-05-20'),pd.to_datetime('2018-08-03'))
     #ax2.set_ylim(-5,5)
     ax2.grid(True)
     
@@ -390,7 +399,7 @@ if KOHNEN:
     windroseKOHNEN.savefig('/Users/swa048/Documents/Data/Kohnen_Data/Kohnen_plots/Wind/'+'windroseKOHNEN'+'.pdf')  
 
 #%% EGRIP 19 28.05.2019-29.07.2019
-EGRIP19=1
+EGRIP19=0
 if EGRIP19:
 
 
