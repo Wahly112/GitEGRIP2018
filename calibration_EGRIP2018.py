@@ -30,7 +30,7 @@ ATMfile_start='/Users/swa048/forServer/Meteo/Ambient/2018/EGRIP/calibration/begi
 
 path_plot='/Users/swa048/forServer/Meteo/Ambient/2018/EGRIP/calibration/'
 plt.close('all')
-plotting=1
+plotting=0
 
 #%%
 #and import 10 min averages as dataframe
@@ -221,7 +221,7 @@ t0=np.datetime64(str(ATM_1s.index[0])[0:4]+'-01-01')   #used to be periodstart[0
 ATM_1s.loc[:,'DOY'] = pd.Series((ATM_1s.index-t0)/dt.timedelta(days=1), index=ATM_1s.index) 
 
 
-#load full season 10 min data from Irgason
+#load full season 10 min data from CSAT
 ECall=pd.read_csv('/Users/swa048/forServer/Meteo/EC/2018/EGRIP/onlinefluxes10min/CR3000_ec_scfd.dat',index_col=0,skiprows=[0,2,3],parse_dates=True,na_values=['NAN'] )
 ECall.rename(columns={'RECORD': 'DOY','Ts_Avg':'Ts'}, inplace=True)
 t0=np.datetime64(str(ECall.index[0])[0:4]+'-01-01')   #used to be periodstart[0:4]
@@ -268,6 +268,7 @@ if plotting:
 
 #middle wind sensor should not be calibrated since it is out of order --> WS_2
 #only have WS and wind direction in one calibration dataframe
+
 
 wind_combi=ATMcombi.loc[:,['WS_1', 'WS_2','WS_3']] #WS_1 = 30cm; WS_3=180cm
 windEC_combi=ECcombi.loc[:,['Ux_Avg','Uy_Avg', 'Uz_Avg','horiz_wind_spd','result_wind_spd']]
@@ -331,6 +332,7 @@ for wind in coeff_wind.index:  #counter,value
 for windcall in coeff_wind.index:  #counter,value
     windcalibrated_combi.loc[:,windcall] = poly.polyval(wind_combi.loc[:,windcall], coeff_wind.loc[windcall,:])  #eigetnliche calibrierung
     ATMcalibrated_all.loc[:,windcall] = poly.polyval(ATM_fullseason.loc[:,windcall], coeff_wind.loc[windcall,:])  #eigetnliche calibrierung
+    ATM_1scali.loc[:,tcall] = poly.polyval(ATM_1s.loc[:,windcall], coeff_wind.loc[windcall,:])  #eigetnliche calibrierung
 
 
 if plotting:
@@ -355,6 +357,8 @@ if plotting:
 plt.figure()
 plt.plot(ATMcalibrated_all.loc[:,'WS_1'],label='cup 30cm')       
 plt.plot(ATMcalibrated_all.loc[:,'WS_3'],label='cup 180cm')   
+plt.plot(ATM_1scali.loc[:,'WS_1'],label='cup 30cm 1s')   #they only start at second half of season when I came in    
+plt.plot(ATM_1scali.loc[:,'WS_3'],label='cup 180cm 1s')  #they only start at second half of season when I came in   
 plt.plot(ECall.loc[:,'horiz_wind_spd'],label='CSAT')
 plt.legend()  
         
@@ -370,6 +374,8 @@ ATMcalibrated_all.rename(inplace=True,columns={'TC1': 'TC_30cm',
                                                 'TC7': 'TC_10cm',
                                                 'WS_1':'WS_30cm',
                                                 'WS_3':'WS_180cm'})
+
+# the 1s wind data from the cup anemometers is not very trustworthy.. better to calculate from the CSAT 20Hz data directly
 ATM_1scali.drop(columns=['TC4','WS_2','WS_1max', 'WS_2max', 'WS_3max', 'BattV', 'PTemp_C'],inplace=True)
 ATM_1scali.rename(inplace=True,columns={'TC1': 'TC_30cm',
                                                 'TC2': 'TC_80cm',

@@ -18,10 +18,10 @@ from loadandconvert import pickperiod,loadperiod,loadfluxperiod,removeoutliers,d
 pathplot='/Users/swa048/Documents/OneDrive/Dokumente/EGRIP/EGRIP2018/EGRIP18_plots/'
 # import the Vapour data
 
-iso7m=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_level1.txt',index_col=0,parse_dates=True,na_values=['NAN'])  #7m?
-iso30=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_level2.txt',index_col=0,parse_dates=True,na_values=['NAN'])  
-iso80=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_level3.txt',index_col=0,parse_dates=True,na_values=['NAN'])
-iso180=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_level4.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+iso7m=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_lev7m.txt',index_col=0,parse_dates=True,na_values=['NAN'])  #7m?
+iso30=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_lev30cm.txt',index_col=0,parse_dates=True,na_values=['NAN'])  
+iso80=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_lev80cm.txt',index_col=0,parse_dates=True,na_values=['NAN'])
+iso180=pd.read_csv('/Volumes/gfi_snowiso/Vapour/2018/processed_data_combined/EG18_lev180cm.txt',index_col=0,parse_dates=True,na_values=['NAN'])
 
 #import meterological data
 ''' pick 10 min meterological data for Clear Diurnal Cycle (CDC) period 
